@@ -30,6 +30,11 @@ pipeline {
                 } 
             } 
         } 
+        stage('Scan Dependencies') { 
+            steps { 
+               sh 'grype lbk3/vatcal:latest' 
+            } 
+        } 
         stage('Clean Up') { 
             steps { 
                 sh "docker image prune --all --force --filter 'until=48h'" 
