@@ -45,8 +45,8 @@ pipeline {
 'GCP_CREDENTIALS')]) { 
                         sh ''' 
                         export GOOGLE_APPLICATION_CREDENTIALS=$GCP_CREDENTIALS 
-                          terraform init
                           terrascan scan -i terraform -t gcp
+                          terraform init
                           terraform apply -auto-approve 
                         ''' 
                     } 
