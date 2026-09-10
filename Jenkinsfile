@@ -1,24 +1,39 @@
 pipeline { 
     agent any 
- 
+    environment { 
+        dockerCreds = credentials('dockerhub_login')  
+        registry = "${dockerCreds_USR}/vatcal" 
+        registryCredentials = "dockerhub_login" 
+        dockerImage = "" // empty var, will be written to later 
+    } 
     stages { 
-        stage('Checkout'){ 
+        stage('Run Tests') { 
             steps { 
-              git url: 'https://github.com/lkmul/lbg-vat-calculator.git',  
-                    branch: 'main' 
-              } 
+               sh 'npm install' 
+               sh 'CI=true npm test' 
+            } 
         } 
-        stage('Build') { 
+        stage('Build Image') { 
             steps { 
-                sh 'npm install' 
-                sh 'npm run build' 
-             } 
+                script { 
+                    dockerImage = docker.build(registry) 
+                } 
+            }
+                    } 
+        stage('Push Image') { 
+            steps { 
+                script { 
+                    docker.withRegistry("", registryCredentials) { 
+                        dockerImage.push("${env.BUILD_NUMBER}") 
+                        dockerImage.push("latest") 
+                    } 
+                } 
+            } 
         } 
-        stage('Archive') { 
+        stage('Clean Up') { 
             steps { 
-                sh 'tar -czf build.tar.gz build' 
-              archiveArtifacts 'build.tar.gz' 
-              } 
+                sh "docker image prune --all --force --filter 'until=48h'" 
+            } 
         } 
     } 
 } 
